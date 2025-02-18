@@ -6,6 +6,46 @@
 #define GPIO_OUTPUT_IO 4
 #define GPIO_OUTPUT_PIN_SEL (1ULL<<GPIO_OUTPUT_IO)
 
+void ex2() {
+    int cnt = 0;
+    while(1) {
+        gpio_set_level(GPIO_OUTPUT_IO, 1);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+
+        gpio_set_level(GPIO_OUTPUT_IO, 0);
+        vTaskDelay(500 / portTICK_PERIOD_MS); 
+        gpio_set_level(GPIO_OUTPUT_IO, 1);
+        vTaskDelay(250 / portTICK_PERIOD_MS); 
+
+        gpio_set_level(GPIO_OUTPUT_IO, 0);
+        vTaskDelay(750 / portTICK_PERIOD_MS); 
+        // printf("cnt: %d\n", cnt++);
+        // vTaskDelay(1000 / portTICK_PERIOD_MS);
+        // gpio_set_level(GPIO_OUTPUT_IO, cnt % 2);
+    }
+   
+}
+
+int cnt_press = 0;
+void ex3(void *pvParameter){
+    int last_state =0; 
+
+    gpio_set_direction(GPIO_OUTPUT_IO, GPIO_MODE_INPUT);
+    gpio_pullup_en(GPIO_BUTTON);
+    while (1) {
+        int current_state = gpio_get_level(GPIO_BUTTON);
+    
+        if (last_state == 1 && current_state == 0) {
+            cnt_press++;
+            printf("pressed!%d\n", cnt_press);
+            vTaskDelay(200 / portTICK_PERIOD_MS); 
+        }
+
+        last_state = current_state;
+        vTaskDelay(10 / portTICK_PERIOD_MS); 
+    }
+}
+
 void app_main() {
     //zero-initialize the config structure.
     gpio_config_t io_conf = {};
@@ -21,24 +61,9 @@ void app_main() {
     io_conf.pull_up_en = 0;
     //configure GPIO with the given settings
     gpio_config(&io_conf);
-    int cnt = 0;
-    while(1) {
 
-        gpio_set_level(GPIO_OUTPUT_IO, 1);
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
+    ex2();
 
-    gpio_set_level(GPIO_OUTPUT_IO, 0);
-    vTaskDelay(500 / portTICK_PERIOD_MS); 
-
-    gpio_set_level(GPIO_OUTPUT_IO, 1);
-    vTaskDelay(250 / portTICK_PERIOD_MS); 
-
-    gpio_set_level(GPIO_OUTPUT_IO, 0);
-    vTaskDelay(750 / portTICK_PERIOD_MS); 
-        // printf("cnt: %d\n", cnt++);
-        // vTaskDelay(1000 / portTICK_PERIOD_MS);
-        // gpio_set_level(GPIO_OUTPUT_IO, cnt % 2);
-    }
-   
+    xTaskCreate(ex3, "ex3", 2048, NULL, 10, NULL);
 
 }
