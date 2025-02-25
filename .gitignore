@@ -2,3 +2,6 @@
 .pio
 include/
 lib/
+CMakeLists.txt
+sdkconfig.esp-wrover-kit
+README
