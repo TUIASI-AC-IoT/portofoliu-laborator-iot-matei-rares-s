@@ -193,7 +193,6 @@ static int fetch_version() {
     // };
 
 
-
      esp_http_client_config_t config = {
         .url = VERSION_URL,
         .cert_pem = (char *)server_cert_pem_start,
@@ -204,6 +203,9 @@ static int fetch_version() {
         .skip_cert_common_name_check = true
     };
     esp_http_client_handle_t client = esp_http_client_init(&config);
+        
+    ESP_ERROR_CHECK(esp_tls_init_global_ca_store());
+    ESP_ERROR_CHECK(esp_tls_set_global_ca_store((unsigned char*)server_cert_pem_start, server_cert_pem_end - server_cert_pem_start));
 
     // GET
     esp_err_t err = esp_http_client_perform(client);
