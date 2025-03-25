@@ -32,6 +32,14 @@ esp_err_t post_handler(httpd_req_t *req)
      * In case of string data, null termination will be absent, and
      * content length would give length of string */
     char content[100];
+    esp_err_t err = nvs_flash_init();
+    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        // NVS partition was truncated and needs to be erased
+        // Retry nvs_flash_init
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        err = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK( err );
 
     /* Truncate if content length larger than the buffer */
     size_t recv_size = MIN(req->content_len, sizeof(content));
@@ -50,11 +58,34 @@ esp_err_t post_handler(httpd_req_t *req)
         return ESP_FAIL;
     }
 
-    /* Send a simple response */
-    const char resp[] = "URI POST Response";
-    httpd_resp_send(req, resp, HTTPD_RESP_USE_STRLEN);  // TODO: Inlocuire cu un sir de caractere ce contine SSID selectat & parola introdusa
+    content[recv_size]='\0';
+    char ssid[32]={0};
+    char pass[64]={0};
+
+    printf("Content: %s\n", content);
+
+    sscanf(content, "SSID:%31[^&]&password:%63s", ssid, pass);
+    nvs_handle_t nvs_handle;
+    err = nvs_open("storage", NVS_READWRITE, &nvs_handle);
+
+    if (err != ESP_OK) {
+        nvs_set_str(nvs_handle, "ssid", ssid);
+        nvs_set_str(nvs_handle, "pass", pass);
+        nvs_commit(nvs_handle);
+        nvs_close(nvs_handle);
+    }
+    
+    char resp[128];
+    snprintf(resp, sizeof(resp), ssid, pass);
+    httpd_resp_send(req, resp, HTTPD_RESP_USE_STRLEN);
+
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
+    printf("Restarting now.\n");
+    esp_restart();
+    
     return ESP_OK;
 }
+
 
 /* URI handler structure for GET /uri */
 httpd_uri_t uri_get = {
