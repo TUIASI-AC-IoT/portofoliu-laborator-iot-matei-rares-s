@@ -59,13 +59,13 @@ def create_config(sensor_id):
     }), 201
 
 
-@app.route('/sensor/<sensor_id>/<filename>', methods=['PUT'])
-def update_config(sensor_id, filename):
-    config_path = os.path.join(CONFIG_DIR, filename)
+@app.route('/sensor/<sensor_id>', methods=['PUT'])
+def update_config(sensor_id):
+    config_path = os.path.join(CONFIG_DIR, f'{sensor_id}.json')
 
     if not os.path.exists(config_path):
         return jsonify({
-            "details": f"Nu se poate actualiza fișierul '{filename}' pentru senzorul '{sensor_id}' deoarece nu există."
+            "details": f"Nu se poate actualiza fișierul pentru senzorul '{sensor_id}' deoarece nu exista."
         }), 400
 
     config_data = request.get_json()
@@ -74,7 +74,7 @@ def update_config(sensor_id, filename):
         json.dump(config_data, f)
 
     return jsonify({
-        "details": f"Fișierul de configurare '{filename}' a fost actualizat.",
+        "details": f"Fișierul de configurare pentru {sensor_id}.json a fost actualizat.",
     })
 
 if __name__ == '__main__':
